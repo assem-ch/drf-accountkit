@@ -103,7 +103,7 @@ class LoginSuccess(APIView):
         # success login
         return user
 
-    def response(user, token, created=None):
+    def response(user, token):
         return {
             'token': token.key,
             'user_id': user.id,
@@ -114,7 +114,7 @@ class LoginSuccess(APIView):
 
         if user:
             token, created = Token.objects.get_or_create(user=user)
-            return Response(self.response(token, user, created), status=status.HTTP_200_OK)
+            return Response(self.response(token, user), status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
 
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
