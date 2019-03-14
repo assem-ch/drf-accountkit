@@ -5,4 +5,4 @@ from django.apps import AppConfig
 
 
 class AccountkitloginConfig(AppConfig):
-    name = 'accountkitlogin'
+    name = 'drf_accountkit'

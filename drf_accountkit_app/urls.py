@@ -1,4 +1,4 @@
-"""django_accountkit URL Configuration
+"""drf_accountkit_app URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.11/topics/http/urls/
@@ -15,10 +15,9 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
-from accountkitlogin.views import *
+from drf_accountkit.views import *
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^$', login_view, name='login-view'),
-    url(r'^success$', success_page, name='success-view')
+    url(r'^success$', success_endpoint, name='success-view')
 ]
