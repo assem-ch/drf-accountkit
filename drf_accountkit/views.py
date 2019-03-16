@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 api_version = getattr(settings, 'ACCOUNT_KIT_VERSION')
 accountkit_secret = getattr(settings, 'ACCOUNT_KIT_APP_SECRET')
-accountkit_app_id = getattr(settings, 'ACCOUNT_KIT_APP_ID')
+facebook_app_id = getattr(settings, 'FACEBOOK_APP_ID')
 
 
 class LoginSuccess(APIView):
@@ -36,10 +36,11 @@ class LoginSuccess(APIView):
     def authenticate_user(self, request):
 
         if request.user.is_authenticated:
-            # already connected
-            return request.user
+            return request.user, 'already connected'
 
-        user_access_token = request.GET.get('access_token') if request.GET.get('access_token', None) else request.POST.get('access_token', None)
+        user_access_token = request.GET.get('access_token') if request.GET.get('access_token',
+                                                                               None) else request.data.get(
+            'access_token', None)
 
         if not user_access_token:
             code = request.GET.get('code') if request.GET.get('code', None) else request.POST.get('code', None)
@@ -47,28 +48,25 @@ class LoginSuccess(APIView):
             status = request.GET.get('status') if request.GET.get('status', None) else request.POST.get('status', None)
 
             if status != "PARTIALLY_AUTHENTICATED":
-                # Accountkit could not authenticate the user
-                return None
+                return None, 'Accountkit could not authenticate the user'
 
             try:
                 signer = TimestampSigner()
                 csrf = signer.unsign(state)
             except BadSignature:
-                # Invalid request
-                return None
+                return None, 'Invalid request'
 
             # Exchange authorization code for access token
             token_url = 'https://graph.accountkit.com/%s/access_token' % api_version
             params = {'grant_type': 'authorization_code', 'code': code,
-                      'access_token': 'AA|%s|%s' % (accountkit_app_id, accountkit_secret)
+                      'access_token': 'AA|%s|%s' % (facebook_app_id, accountkit_secret)
                       }
 
             res = requests.get(token_url, params=params)
             token_response = res.json()
 
             if 'error' in token_response:
-                # This authorization code has been used
-                return None
+                return None, 'This authorization code has been used'
 
             user_id = token_response.get('id')
             user_access_token = token_response.get('access_token')
@@ -82,11 +80,9 @@ class LoginSuccess(APIView):
         identity_response = res.json()
 
         if 'error' in identity_response:
-            # identity error
-            return None
-        elif identity_response['application']['id'] != accountkit_app_id:
-            # The application id returned does not match the one in your settings
-            return None
+            return None, 'Identity error'
+        elif identity_response['application']['id'] != facebook_app_id:
+            return None, 'The application id returned does not match the one in your settings'
 
         user = None
         username = None
@@ -101,11 +97,9 @@ class LoginSuccess(APIView):
             user = self.get_or_create_user(username)
 
         if not user:
-            # user may not active
-            return None
+            return None, 'user may not active'
 
-        # success login
-        return user
+        return user, 'success login'
 
     def response(self, user, token):
         return {
@@ -113,12 +107,19 @@ class LoginSuccess(APIView):
             'user_id': user.id,
         }
 
-    def post(self, request, format=None):
-        user = self.authenticate_user(request)
+    def main(self, request):
+        user, message = self.authenticate_user(request)
 
         if user:
             token, created = Token.objects.get_or_create(user=user)
-            return Response(self.response(user, token), status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+            return Response(self.response(user, token),
+                            status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
 
         else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'message'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def post(self, request, format=None):
+        return self.main(request)
+
+    def get(self, request, format=None):
+        return self.main(request)

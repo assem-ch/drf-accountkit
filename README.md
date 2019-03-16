@@ -20,7 +20,7 @@ And add `drf_accountkit` URLconf to your `url.py` like this:
 Now add the following settings in your settings.py file
 
 
-	ACCOUNT_KIT_APP_ID = <Accountkit App ID>
+	FACEBOOK_APP_ID = <Accountkit App ID>
 	ACCOUNT_KIT_APP_SECRET = <Accountkit App Secret>
 	ACCOUNT_KIT_VERSION = "v1.0"
 
@@ -28,11 +28,19 @@ Now add the following settings in your settings.py file
 
 You have to configure account kit in your frontend and specify `[YOUR_PREFIX]/login_success` as the success url.
 
+You either send to login success as POST (or GET) those info:
+- `access_token`
+
+or
+
+- `code`, `state`, `status`
+
 You will get as result:
 - **Successful:** API status 200 or 201
-    - Key 'token'
-    - Key 'user_id'
+    - `token`
+    - `user_id`
 - **Refusal:** API status 401
+    - `message`
 
 
 ## Costumization
