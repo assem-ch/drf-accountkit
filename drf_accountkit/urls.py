@@ -10,5 +10,5 @@ except:
     from django.conf.urls import  url
 
     urlpatterns = [
-        url(r'^login_success', LoginSuccess.as_view(), name="login_success"),
+        url(r'^login_success/?', LoginSuccess.as_view(), name="login_success"),
     ]
