@@ -97,9 +97,9 @@ class LoginSuccess(APIView):
             user = self.get_or_create_user(username)
 
         if not user:
-            return None, 'user may not active'
+            return None, 'User may not active'
 
-        return user, 'success login'
+        return user, 'Success login'
 
     def response(self, user, token):
         return {
@@ -116,7 +116,7 @@ class LoginSuccess(APIView):
                             status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
 
         else:
-            return Response({'error': 'message'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': message}, status=status.HTTP_401_UNAUTHORIZED)
 
     def post(self, request, format=None):
         return self.main(request)
