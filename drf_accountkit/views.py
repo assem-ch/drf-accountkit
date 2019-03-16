@@ -34,41 +34,45 @@ class LoginSuccess(APIView):
         return user
 
     def authenticate_user(self, request):
-        code = request.GET.get('code') if request.GET.get('code', None) else request.POST.get('code', None)
-        state = request.GET.get('state') if request.GET.get('state', None) else request.POST.get('state', None)
-        status = request.GET.get('status') if request.GET.get('status', None) else request.POST.get('status', None)
 
         if request.user.is_authenticated:
             # already connected
             return request.user
 
-        if status != "PARTIALLY_AUTHENTICATED":
-            # Accountkit could not authenticate the user
-            return None
+        user_access_token = request.GET.get('access_token') if request.GET.get('access_token', None) else request.POST.get('access_token', None)
 
-        try:
-            signer = TimestampSigner()
-            csrf = signer.unsign(state)
-        except BadSignature:
-            # Invalid request
-            return None
+        if not user_access_token:
+            code = request.GET.get('code') if request.GET.get('code', None) else request.POST.get('code', None)
+            state = request.GET.get('state') if request.GET.get('state', None) else request.POST.get('state', None)
+            status = request.GET.get('status') if request.GET.get('status', None) else request.POST.get('status', None)
 
-        # Exchange authorization code for access token
-        token_url = 'https://graph.accountkit.com/%s/access_token' % api_version
-        params = {'grant_type': 'authorization_code', 'code': code,
-                  'access_token': 'AA|%s|%s' % (accountkit_app_id, accountkit_secret)
-                  }
+            if status != "PARTIALLY_AUTHENTICATED":
+                # Accountkit could not authenticate the user
+                return None
 
-        res = requests.get(token_url, params=params)
-        token_response = res.json()
+            try:
+                signer = TimestampSigner()
+                csrf = signer.unsign(state)
+            except BadSignature:
+                # Invalid request
+                return None
 
-        if 'error' in token_response:
-            # This authorization code has been used
-            return None
+            # Exchange authorization code for access token
+            token_url = 'https://graph.accountkit.com/%s/access_token' % api_version
+            params = {'grant_type': 'authorization_code', 'code': code,
+                      'access_token': 'AA|%s|%s' % (accountkit_app_id, accountkit_secret)
+                      }
 
-        user_id = token_response.get('id')
-        user_access_token = token_response.get('access_token')
-        refresh_interval = token_response.get('token_refresh_interval_sec')
+            res = requests.get(token_url, params=params)
+            token_response = res.json()
+
+            if 'error' in token_response:
+                # This authorization code has been used
+                return None
+
+            user_id = token_response.get('id')
+            user_access_token = token_response.get('access_token')
+            refresh_interval = token_response.get('token_refresh_interval_sec')
 
         # Get Account Kit information
         identity_url = 'https://graph.accountkit.com/%s/me' % api_version
@@ -103,18 +107,18 @@ class LoginSuccess(APIView):
         # success login
         return user
 
-    def response(user, token):
+    def response(self, user, token):
         return {
             'token': token.key,
             'user_id': user.id,
         }
 
-    def get(self, request, format=None):
+    def post(self, request, format=None):
         user = self.authenticate_user(request)
 
         if user:
             token, created = Token.objects.get_or_create(user=user)
-            return Response(self.response(token, user), status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+            return Response(self.response(user, token), status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
 
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
