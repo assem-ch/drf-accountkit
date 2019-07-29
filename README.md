@@ -45,8 +45,8 @@ You will get as result:
 
 ## Costumization
 You can overide methods of  `LoginSuccess` API view like:
- - `get_username(phone, email)` to costumize the username to be stored
- - `response(user, token)` to costumize the response of endpoint
+ - `get_username(phone, email)` to customize the username to be stored
+ - `response(user, token)` to customize the response of endpoint
 
 
 ### This is project is based on
