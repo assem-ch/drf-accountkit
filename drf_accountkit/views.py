@@ -14,6 +14,9 @@ from drf_accountkit.accountkit import AccountKit
 class LoginSuccess(AccountKit, APIView):
     authentication_classes = []
     permission_classes = [permissions.AllowAny]
+    facebook_app_id = getattr(settings, 'FACEBOOK_APP_ID', default=None)
+    accountkit_secret = getattr(settings, 'ACCOUNT_KIT_APP_SECRET', default=None)
+    api_version = getattr(settings, 'ACCOUNT_KIT_VERSION', default='v1.1')
     accountkit_secret = getattr(settings, 'ACCOUNT_KIT_APP_SECRET')
     facebook_app_id = getattr(settings, 'FACEBOOK_APP_ID')
     api_version = getattr(settings, 'ACCOUNT_KIT_VERSION')
@@ -75,6 +78,9 @@ class LoginSuccess(AccountKit, APIView):
         }
 
     def main(self, request):
+        if not self.facebook_app_id or not self.accountkit_secret:
+            raise Exception("Be sure you defined FACEBOOK_APP_ID and ACCOUNT_KIT_APP_SECRET in your settings file!")
+
         user, message = self.authenticate_user(request)
 
         if user:
