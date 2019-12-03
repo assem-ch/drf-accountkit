@@ -1,3 +1,5 @@
+   Facebook is shutting down account kit so this library won't be useful.
+
 # drf-accountkit
 This package enables the use of Facebook Accountkit for Django Rest Framework
 
